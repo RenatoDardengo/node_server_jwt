@@ -11,4 +11,4 @@ const bcrypt = {
     },
 };
 
-module.exports = bcrypt;
+export default bcrypt;
