@@ -1,0 +1,29 @@
+{
+  "name": "server_node",
+  "version": "1.0.0",
+  "description": "Servidor Node para next - validação JWT",
+  "main": "app.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/app.js"
+  },
+  "author": "Renato Dardengo",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.3",
+    "sequelize": "^6.35.0"
+  },
+  "_moduleAliases": {
+    "@root": "."
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/module-alias": "^2.0.4",
+    "module-alias": "^2.2.3",
+    "typescript": "^5.2.2"
+  }
+}
