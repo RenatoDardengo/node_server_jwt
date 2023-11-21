@@ -6,9 +6,13 @@ import bcrypt from '@src/helpers/bcrypt';
 import { logError } from '@src/helpers/logger';
 const authController = {
 
-    createUser: async (req:Request, res:Response)=>{
+    storeUser: async (req:Request, res:Response)=>{
         const {name,password,isAdmin, permission} = req.body;
+        console.log (req.body)
         try {
+            if(!name|| !password){
+                return res.status(400).json({ msg: 'Atenção! Todos os campos são de preenchimento obrigatório.' });
+            }
             const existingUser = await UserAdmin.findOne({ where: { name } });
             if (existingUser) {
                 return res.status(400).json({ msg: 'Usuário já existe' });
@@ -33,6 +37,11 @@ const authController = {
             }
             return res.status(500).json({ msg: `Ocorreu um erro com sua requisição ao servidor.` });
         }
+
+    },
+
+    updateUser: async (req: Request, res: Response) => {
+        const { name, password, isAdmin, permission } = req.body;
 
     },
 
