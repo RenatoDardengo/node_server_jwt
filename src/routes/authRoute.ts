@@ -6,6 +6,6 @@ import authenticated from '@src/middleware/authenticated';
 router.get("/", authController.login);
 router.post("/", authController.authentication);
 router.post("/create", authenticated, authController.storeUser);
-router.put ("/update/:id", authController.updateUser);
+router.put ("/update/:id", authenticated, authController.updateUser);
 
 module.exports=router;

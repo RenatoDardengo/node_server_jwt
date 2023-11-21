@@ -4,11 +4,13 @@ const db = require ("@src/config/sequelize");
 import UserAdmin from '@src/models/userAdm';
 import bcrypt from '@src/helpers/bcrypt';
 import { logError } from '@src/helpers/logger';
+import { Transaction } from 'sequelize';
+const  {sequelize}  = require('@src/config/sequelize');
 const authController = {
 
     storeUser: async (req:Request, res:Response)=>{
         const {name,password,isAdmin, permission} = req.body;
-        console.log (req.body)
+        const t = await sequelize.transaction();
         try {
             if(!name|| !password){
                 return res.status(400).json({ msg: 'Atenção! Todos os campos são de preenchimento obrigatório.' });
@@ -25,10 +27,12 @@ const authController = {
                 isAdmin,
                 permission,
 
-            })
+            },{transaction:t})
+            await t.commit();
            return res.status(201).json({msg:"Usuário cadastrado com sucesso!", newUser})
             
         } catch (error) {
+            await t.rollback();
             if (error instanceof Error) {
                 console.error('Erro:', error);
                 logError(error);
@@ -42,8 +46,48 @@ const authController = {
 
     updateUser: async (req: Request, res: Response) => {
         const { name, password, isAdmin, permission } = req.body;
+        const id = req.params.id;
+        const t = await sequelize.transaction();
+  
 
+
+        try {
+            // Verifica se o usuário existe
+            const existingUser = await UserAdmin.findByPk(id);
+            if (!existingUser) {
+                return res.status(404).json({ msg: 'Usuário não encontrado' });
+            }
+
+            // Atualiza somente os campos recebidos que não são nulos
+            if (name !== undefined) {
+                existingUser.name = name;
+            }
+            if (password !== undefined) {
+                existingUser.password = bcrypt.generateHash(password);
+            }
+            if (isAdmin !== undefined) {
+                existingUser.isAdmin = isAdmin;
+            }
+            if (permission !== undefined) {
+                existingUser.permission = permission;
+            }
+
+            await sequelize.transaction(async (t:Transaction) => {
+                await existingUser.save({ transaction: t });
+            });
+
+            return res.status(200).json({ msg: 'Usuário atualizado com sucesso', user: existingUser });
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('Erro:', error);
+                logError(error);
+            } else {
+                console.error('Erro inesperado:', error);
+            }
+            return res.status(500).json({ msg: 'Ocorreu um erro ao atualizar o usuário' });
+        }
     },
+
 
     authentication: async (req: Request, res: Response) => {
         const { name, password } = req.body;
