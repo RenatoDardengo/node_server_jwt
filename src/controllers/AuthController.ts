@@ -88,13 +88,13 @@ const authController = {
         }
     },
 
-
     authentication: async (req: Request, res: Response) => {
-        const { name, password } = req.body;
+        const { userName, password } = req.body;
+        const expirationTime:number= 14400;//segundos
         try {
             const userAuth = await UserAdmin.findOne({
                 where: {
-                    name: name,
+                    name: userName,
                     
                 }
             });
@@ -105,18 +105,23 @@ const authController = {
                         const secret = process.env.SECRET;
                         const token = jwt.sign(
                         {
-                            id:userAuth.id
+                            id:userAuth.id,
+                            name: userAuth.name,
+                            permission: userAuth.permission
                         },
-                        secret
+                        secret,
+                        {
+                            expiresIn:expirationTime
+                        }
                         
                         )
                       return  res.status(200).json({ msg: `Atenticação realizada com sucesso`, token });
                 } else {
-                    return res.status(401).json({ msg: `O usuário ${name} não existe ou a senha está incorreta` });
+                    return res.status(401).json({ msg: `O usuário ${userName} não existe ou a senha está incorreta` });
                 }
                 
             } else {
-                return res.status(401).json({ msg: `O usuário ${name} não existe ou a senha está incorreta` });
+                return res.status(401).json({ msg: `O usuário ${userName} não existe ou a senha está incorreta` });
             }
         } catch (error) {
             if (error instanceof Error) {
@@ -128,9 +133,29 @@ const authController = {
            return res.status(400).json({ msg: `Ocorreu um erro com sua requisição ao servidor.` });
         }
     },
-    login: (req: Request, res: Response) => {
-        res.status(200).json({ msg: 'Bem vindo ao login' })
+
+    getAllUsers: async (req: Request, res: Response) => {
+        try {
+            const allUsers = await UserAdmin.findAll();
+            if(allUsers.length===0){
+                return res.status(404).json({msg: "Não há usuários cadastrados."})
+            }
+            return res.status(200).json({users:allUsers})
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('Erro:', error);
+                logError(error);
+            } else {
+                console.error('Erro inesperado:', error);
+            }
+            return res.status(400).json({ msg: `Ocorreu um erro com sua requisição ao servidor.` });
+        }
     },
+
+    verifyToken: async (req: Request, res: Response)=>{
+        return res.status(200).json({ msg:"Token validado." })
+
+    }
 }
 
 module.exports=authController;
