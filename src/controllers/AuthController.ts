@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 const jwt = require('jsonwebtoken');
 const db = require ("@src/config/sequelize");
-import UserAdmin from '@src/models/userAdm';
+import UserAdmin from '@src/models/Users';
 import bcrypt from '@src/helpers/bcrypt';
 import { logError } from '@src/helpers/logger';
 import { Transaction } from 'sequelize';
@@ -9,7 +9,7 @@ const  {sequelize}  = require('@src/config/sequelize');
 const authController = {
 
     storeUser: async (req:Request, res:Response)=>{
-        const {name,password,isAdmin, permission} = req.body;
+        const { name, password, level, phoneNumber, jobTitle, status, createdDate, updatedDate } = req.body;
         const t = await sequelize.transaction();
         try {
             if(!name|| !password){
@@ -24,8 +24,12 @@ const authController = {
             const newUser = await UserAdmin.create({
                 name,
                 password:hashedPassword,
-                isAdmin,
-                permission,
+                level,
+                phone_number:phoneNumber,
+                job_title:jobTitle,
+                status,
+                created_date:createdDate,
+                updated_date:updatedDate
 
             },{transaction:t})
             await t.commit();
@@ -45,7 +49,7 @@ const authController = {
     },
 
     updateUser: async (req: Request, res: Response) => {
-        const { name, password, isAdmin, permission } = req.body;
+        const { name, password, level, phoneNumber, jobTitle, status, createdDate, updatedDate } = req.body;
         const id = req.params.id;
         const t = await sequelize.transaction();
   
@@ -58,18 +62,29 @@ const authController = {
                 return res.status(404).json({ msg: 'Usuário não encontrado' });
             }
 
-            // Atualiza somente os campos recebidos que não são nulos
             if (name !== undefined) {
                 existingUser.name = name;
             }
             if (password !== undefined) {
                 existingUser.password = bcrypt.generateHash(password);
             }
-            if (isAdmin !== undefined) {
-                existingUser.isAdmin = isAdmin;
+            if (level !== undefined) {
+                existingUser.level = level;
             }
-            if (permission !== undefined) {
-                existingUser.permission = permission;
+            if (phoneNumber !== undefined) {
+                existingUser.phone_number = phoneNumber;
+            }
+            if (jobTitle!== undefined) {
+                existingUser.job_title = jobTitle;
+            }
+            if (status !== undefined) {
+                existingUser.status = status;
+            }
+            if (createdDate !== undefined) {
+                existingUser.created_date = createdDate;
+            }
+            if (updatedDate !== undefined) {
+                existingUser.updated_date = updatedDate;
             }
 
             await sequelize.transaction(async (t:Transaction) => {
@@ -107,7 +122,7 @@ const authController = {
                         {
                             id:userAuth.id,
                             name: userAuth.name,
-                            permission: userAuth.permission
+                            level: userAuth.level
                         },
                         secret,
                         {
@@ -136,7 +151,9 @@ const authController = {
 
     getAllUsers: async (req: Request, res: Response) => {
         try {
-            const allUsers = await UserAdmin.findAll();
+            const allUsers = await UserAdmin.findAll({
+                attributes: { exclude: ['password'] }
+            });
             if(allUsers.length===0){
                 return res.status(404).json({msg: "Não há usuários cadastrados."})
             }

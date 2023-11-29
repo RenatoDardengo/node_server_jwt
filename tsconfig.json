@@ -40,7 +40,7 @@
     "include": [
         "./src/**/*.ts",
         "./test/**/*.ts",
-        "app.ts", "src/models/userAdm.ts",
+        "app.ts", "src/models/Users.ts",
     ],
     "exclude": [
         "node_modules",
