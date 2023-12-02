@@ -12,12 +12,19 @@ const authController = {
         const { name, password, level, phoneNumber, jobTitle, status, createdDate, updatedDate } = req.body;
         const t = await sequelize.transaction();
         try {
-            if(!name|| !password){
-                return res.status(400).json({ msg: 'Atenção! Todos os campos são de preenchimento obrigatório.' });
+            if(!name ){
+                return res.status(400).json({ msg: 'Atenção! O nome do usuário não foi preenchido.' });
+            } else if (!password){
+                return res.status(400).json({ msg: 'Atenção! O campo "senha" é de preenchimento obrigatório.' });
+            } else if (!phoneNumber) {
+                return res.status(400).json({ msg: 'Atenção! O campo "telefone" é de preenchimento obrigatório.' });
+            }
+            else if (!jobTitle) {
+                return res.status(400).json({ msg: 'Atenção! O campo "função" é de preenchimento obrigatório.' });
             }
             const existingUser = await UserAdmin.findOne({ where: { name } });
             if (existingUser) {
-                return res.status(400).json({ msg: 'Usuário já existe' });
+                return res.status(400).json({ msg: `O usuário ${name} já está cadastrado no banco de dados` });
             }
 
             const hashedPassword = bcrypt.generateHash(password);
