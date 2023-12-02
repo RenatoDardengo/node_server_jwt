@@ -8,5 +8,6 @@ router.post("/", authController.authentication);
 router.post("/create", authenticated, authController.storeUser);
 router.put ("/update/:id", authenticated, authController.updateUser);
 router.get('/verify-token', authenticated, authController.verifyToken);
+router.get('/users/search', authenticated, authController.getUsers);
 
 module.exports=router;

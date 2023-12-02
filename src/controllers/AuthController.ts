@@ -4,8 +4,9 @@ const db = require ("@src/config/sequelize");
 import UserAdmin from '@src/models/Users';
 import bcrypt from '@src/helpers/bcrypt';
 import { logError } from '@src/helpers/logger';
-import { Transaction } from 'sequelize';
+import { Transaction, Op} from 'sequelize';
 const  {sequelize}  = require('@src/config/sequelize');
+
 const authController = {
 
     storeUser: async (req:Request, res:Response)=>{
@@ -161,20 +162,58 @@ const authController = {
             const allUsers = await UserAdmin.findAll({
                 attributes: { exclude: ['password'] }
             });
-            if(allUsers.length===0){
-                return res.status(404).json({msg: "Não há usuários cadastrados."})
+
+            if (allUsers.length === 0) {
+                return res.status(404).json({ msg: "Não há usuários cadastrados." });
             }
-            return res.status(200).json({users:allUsers})
+
+            const mappedUsers = allUsers.map((user: any) => ({
+                id: user.id,
+                name: user.name,
+                level: user.level,
+                phoneNumber: user.phone_number, 
+                jobTitle: user.job_title,
+                status: user.status,
+                createdDate: user.created_date, 
+                updatedDate: user.updated_date, 
+            }));
+
+            return res.status(200).json({ users: mappedUsers });
         } catch (error) {
-            if (error instanceof Error) {
-                console.error('Erro:', error);
-                logError(error);
-            } else {
-                console.error('Erro inesperado:', error);
-            }
             return res.status(400).json({ msg: `Ocorreu um erro com sua requisição ao servidor.` });
         }
     },
+
+    getUsers: async (req: Request, res: Response) => {
+        const { searchTerm } = req.query; 
+
+        try {
+            const users = await UserAdmin.findAll({
+                where: {
+                    name: {
+                        [Op.substring]: searchTerm 
+                    }
+                },
+                attributes: { exclude: ['password'] }
+            });
+
+            if (users.length === 0) {
+                return res.status(404).json({ msg: 'Nenhum usuário encontrado com o padrão fornecido.' });
+            }
+
+            const mappedUsers = users.map((user: any) => ({
+                id: user.id,
+                name: user.name,
+            }));
+
+            return res.status(200).json({ users: mappedUsers });
+        } catch (error) {
+            console.error('Erro:', error);
+            return res.status(500).json({ msg: 'Ocorreu um erro ao buscar os usuários.' });
+        }
+    },
+
+
 
     verifyToken: async (req: Request, res: Response)=>{
         return res.status(200).json({ msg:"Token validado." })
