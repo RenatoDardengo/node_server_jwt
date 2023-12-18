@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
-const jwt = require('jsonwebtoken');
-const db = require ("@src/config/sequelize");
 import UserAdmin from '@src/models/Users';
 import bcrypt from '@src/helpers/bcrypt';
 import { logError } from '@src/helpers/logger';
 import { Transaction, Op} from 'sequelize';
+const db = require ("@src/config/sequelize");
+const jwt = require('jsonwebtoken');
 const  {sequelize}  = require('@src/config/sequelize');
+
 
 const authController = {
 
@@ -110,6 +111,31 @@ const authController = {
             return res.status(500).json({ msg: 'Ocorreu um erro ao atualizar o usuário' });
         }
     },
+    destroy: async (req: Request, res: Response) => {
+        const id = req.params.id;
+        const t = await sequelize.transaction();
+
+        try {
+            const existingUser = await UserAdmin.findByPk(id);
+
+            if (!existingUser) {
+                return res.status(404).json({ msg: `Usuário com o ID ${id} não encontrado` });
+            }
+
+            await existingUser.destroy({ transaction: t });
+
+            await t.commit();
+
+           return res.status(200).json({ msg: `Usuário com ID ${id} excluído com sucesso` });
+        } catch (error:any) {
+            await t.rollback();
+            console.error('Erro:', error);
+            logError(error);
+
+            return res.status(500).json({ msg: `Ocorreu um erro ao excluir o usuário com ID ${id}` });
+        }
+    },
+
 
     authentication: async (req: Request, res: Response) => {
         const { userName, password } = req.body;
@@ -185,16 +211,20 @@ const authController = {
     },
 
     getUsers: async (req: Request, res: Response) => {
-        const { searchTerm } = req.query; 
+       const { searchTerm, page = 1, limit = 10 } = req.query as any;
+
 
         try {
+            const offset = (page - 1) * limit;
             const users = await UserAdmin.findAll({
                 where: {
                     name: {
                         [Op.substring]: searchTerm 
                     }
                 },
-                attributes: { exclude: ['password'] }
+                attributes: { exclude: ['password'] },
+                limit: limit,
+                offset: offset
             });
 
             if (users.length === 0) {
@@ -204,16 +234,25 @@ const authController = {
             const mappedUsers = users.map((user: any) => ({
                 id: user.id,
                 name: user.name,
+                level: user.level,
+                phoneNumber: user.phone_number,
+                jobTitle: user.job_title,
+                status: user.status,
+                createdDate: user.created_date,
+                updatedDate: user.updated_date, 
             }));
 
-            return res.status(200).json({ users: mappedUsers });
+            return res.status(200).json({
+                totalItems: users.length,
+                totalPages: Math.ceil(users.length / limit),
+                currentPage: page,
+                users: mappedUsers
+            });
         } catch (error) {
             console.error('Erro:', error);
             return res.status(500).json({ msg: 'Ocorreu um erro ao buscar os usuários.' });
         }
     },
-
-
 
     verifyToken: async (req: Request, res: Response)=>{
         return res.status(200).json({ msg:"Token validado." })
