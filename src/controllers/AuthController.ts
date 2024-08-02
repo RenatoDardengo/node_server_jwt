@@ -12,8 +12,13 @@ const authController = {
 
     storeUser: async (req:Request, res:Response)=>{
         const { name, password, level, phoneNumber, jobTitle, status, createdDate, updatedDate } = req.body;
+        const contentType = req.headers['content-type'];
         const t = await sequelize.transaction();
         try {
+            if (contentType && contentType.indexOf('application/json') === -1){
+                return res.status(400).json({ msg: 'Tipo de conteúdo inválido. Esperava-se JSON.' });
+
+            }
             if(!name ){
                 return res.status(400).json({ msg: 'Atenção! O nome do usuário não foi preenchido.' });
             } else if (!password){
@@ -161,9 +166,10 @@ const authController = {
                         secret,
                         {
                             expiresIn:expirationTime
-                        }
-                        
-                        )
+                        });
+                     /* res.cookie('token',token,{
+                        httpOnly:true,
+                      })*/
                       return  res.status(200).json({ msg: `Atenticação realizada com sucesso`, token });
                 } else {
                     return res.status(401).json({ msg: `O usuário ${userName} não existe ou a senha está incorreta` });
